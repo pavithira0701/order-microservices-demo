@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.order.service.client.ProductClient;
+import com.order.service.exception.InsufficientStockException;
 import com.order.service.exception.ProductNotFoundException;
 import com.order.service.model.Order;
 import com.order.service.model.ProductResponse;
@@ -31,6 +32,11 @@ public class OrderService {
 			log.info("Calling Product Service: productId={}", order.getProductId());
 			ProductResponse product = productClient.getProduct(order.getProductId());
 			log.info("Product found: productId={}", order.getProductId());
+			boolean stockAvailable = productClient.checkStock(order.getProductId(), order.getQuantity());
+			if (!stockAvailable) {
+				log.warn("Insufficient stock: productId={}, quantity={}", order.getProductId(), order.getQuantity());
+				throw new InsufficientStockException("Insufficient stock for product: " + order.getProductId());
+			}
 			return orderRepository.save(order);
 		} catch (FeignException.NotFound ex) {
 			log.warn("Product not found: productId={}", order.getProductId());

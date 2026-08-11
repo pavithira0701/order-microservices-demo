@@ -13,21 +13,23 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(ProductNotFoundException.class)
 	public ResponseEntity<ApiResponse<Void>> handleProductNotFound(ProductNotFoundException ex) {
-
 		ApiResponse<Void> response = new ApiResponse<>(ex.getMessage(), HttpStatus.NOT_FOUND.value(), null);
-
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException ex) {
-
 		String message = ex.getBindingResult().getFieldErrors().stream()
 				.map(error -> error.getField() + ": " + error.getDefaultMessage()).findFirst()
 				.orElse("Invalid request");
-
 		ApiResponse<Void> response = new ApiResponse<>(message, HttpStatus.BAD_REQUEST.value(), null);
-
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
 	}
+
+	@ExceptionHandler(InsufficientStockException.class)
+	public ResponseEntity<ApiResponse<Void>> handleInsufficientStock(InsufficientStockException ex) {
+		ApiResponse<Void> response = new ApiResponse<>(ex.getMessage(), HttpStatus.CONFLICT.value(), null);
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+	}
+
 }
