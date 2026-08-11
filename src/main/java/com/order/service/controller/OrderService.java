@@ -29,18 +29,28 @@ public class OrderService {
 	public Order createOrder(Order order) {
 		log.info("Creating order for productId={}, quantity={}", order.getProductId(), order.getQuantity());
 		try {
-			log.info("Calling Product Service: productId={}", order.getProductId());
-			ProductResponse product = productClient.getProduct(order.getProductId());
-			log.info("Product found: productId={}", order.getProductId());
-			boolean stockAvailable = productClient.checkStock(order.getProductId(), order.getQuantity());
-			if (!stockAvailable) {
-				log.warn("Insufficient stock: productId={}, quantity={}", order.getProductId(), order.getQuantity());
-				throw new InsufficientStockException("Insufficient stock for product: " + order.getProductId());
-			}
+			// reserve stock
+			productClient.reserveStock(order.getProductId(), order.getQuantity());
+			/*
+			 * // get product log.info("Calling Product Service: productId={}",
+			 * order.getProductId()); ProductResponse product =
+			 * productClient.getProduct(order.getProductId());
+			 * log.info("Product found: productId={}", order.getProductId()); // get stock
+			 * boolean stockAvailable = productClient.checkStock(order.getProductId(),
+			 * order.getQuantity()); if (!stockAvailable) {
+			 * log.warn("Insufficient stock: productId={}, quantity={}",
+			 * order.getProductId(), order.getQuantity()); throw new
+			 * InsufficientStockException("Insufficient stock for product: " +
+			 * order.getProductId()); } // reduce stock
+			 * productClient.updateStock(order.getProductId(), order.getQuantity());
+			 */
+			log.info("Stock reserved: productId={}, quantity={}", order.getProductId(), order.getQuantity());
+			// save order
 			return orderRepository.save(order);
 		} catch (FeignException.NotFound ex) {
-			log.warn("Product not found: productId={}", order.getProductId());
 			throw new ProductNotFoundException("Product not found: " + order.getProductId());
+		} catch (FeignException.Conflict ex) {
+			throw new InsufficientStockException("Insufficient stock for product: " + order.getProductId());
 		}
 	}
 
