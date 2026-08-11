@@ -1,6 +1,8 @@
 package com.order.service.model;
 
 import jakarta.persistence.Entity;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.persistence.Table;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,8 +15,11 @@ public class Order {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+	@NotNull(message = "Product ID is required")
 	private Long productId;
-	private int quantity;
+	@NotNull(message = "Quantity is required")
+    @Positive(message = "Quantity must be greater than zero")
+	private Integer quantity;
 
 	public Order(Long id, int quantity, Long productId) {
 		super();

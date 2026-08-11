@@ -1,6 +1,7 @@
 package com.order.service.controller;
 
 import java.util.List;
+import jakarta.validation.Valid;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
@@ -31,7 +32,7 @@ public class OrderController {
 
 	// to create new order
 	@PostMapping
-	public ResponseEntity<ApiResponse<Order>> createOrder(@RequestBody Order order) {
+	public ResponseEntity<ApiResponse<Order>> createOrder(@Valid @RequestBody Order order) {
 		Order createdOrder = orderService.createOrder(order);
 		ApiResponse<Order> response = new ApiResponse<>("Order placed Successfully", HttpStatus.CREATED.value(),
 				createdOrder);
