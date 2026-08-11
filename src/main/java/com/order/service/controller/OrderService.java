@@ -1,14 +1,20 @@
 package com.order.service.controller;
 
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.order.service.client.ProductClient;
+import com.order.service.exception.ProductNotFoundException;
 import com.order.service.model.Order;
 import com.order.service.model.ProductResponse;
 import com.order.service.repository.OrderRepository;
 
+import feign.FeignException;
+
 @Service
 public class OrderService {
+	private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
 	private final ProductClient productClient;
 	private final OrderRepository orderRepository;
@@ -20,11 +26,16 @@ public class OrderService {
 	}
 
 	public Order createOrder(Order order) {
-		ProductResponse product = productClient.getProduct(order.getProductId());
-		if (product == null) {
-			return null;
+		log.info("Creating order for productId={}, quantity={}", order.getProductId(), order.getQuantity());
+		try {
+			log.info("Calling Product Service: productId={}", order.getProductId());
+			ProductResponse product = productClient.getProduct(order.getProductId());
+			log.info("Product found: productId={}", order.getProductId());
+			return orderRepository.save(order);
+		} catch (FeignException.NotFound ex) {
+			log.warn("Product not found: productId={}", order.getProductId());
+			throw new ProductNotFoundException("Product not found: " + order.getProductId());
 		}
-		return orderRepository.save(order);
 	}
 
 	public ProductResponse getProduct(Long productId) {

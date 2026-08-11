@@ -29,21 +29,13 @@ public class OrderController {
 		this.orderService = orderService;
 	}
 
-	/*
-	 * public OrderController(OrderRepository orderRepository) {
-	 * this.orderRepository = orderRepository; }
-	 */
-
 	// to create new order
 	@PostMapping
 	public ResponseEntity<ApiResponse<Order>> createOrder(@RequestBody Order order) {
 		Order createdOrder = orderService.createOrder(order);
-		if (createdOrder == null) {
-			return ResponseEntity.notFound().build();
-		}
 		ApiResponse<Order> response = new ApiResponse<>("Order placed Successfully", HttpStatus.CREATED.value(),
 				createdOrder);
-		return new ResponseEntity<>(response, HttpStatus.CREATED);
+		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
 	// get all orders
