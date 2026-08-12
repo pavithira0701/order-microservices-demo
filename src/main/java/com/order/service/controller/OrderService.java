@@ -1,15 +1,19 @@
 package com.order.service.controller;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.order.service.client.ProductClient;
+import com.order.service.event.OrderCreatedEvent;
 import com.order.service.exception.InsufficientStockException;
 import com.order.service.exception.ProductNotFoundException;
 import com.order.service.model.Order;
 import com.order.service.model.ProductResponse;
 import com.order.service.repository.OrderRepository;
+import com.order.service.repository.OutboxEventRepository;
 
 import feign.FeignException;
 
@@ -19,13 +23,17 @@ public class OrderService {
 
 	private final ProductClient productClient;
 	private final OrderRepository orderRepository;
+	private final OutboxEventRepository outboxEventRepository;
 
-	public OrderService(OrderRepository orderRepository, ProductClient productClient) {
+	public OrderService(OrderRepository orderRepository, ProductClient productClient,
+			OutboxEventRepository outboxEventRepository) {
 
 		this.orderRepository = orderRepository;
 		this.productClient = productClient;
+		this.outboxEventRepository = outboxEventRepository;
 	}
 
+	@Transactional
 	public Order createOrder(Order order) {
 		log.info("Creating order for productId={}, quantity={}", order.getProductId(), order.getQuantity());
 		try {
@@ -46,11 +54,31 @@ public class OrderService {
 			 */
 			log.info("Stock reserved: productId={}, quantity={}", order.getProductId(), order.getQuantity());
 			// save order
-			return orderRepository.save(order);
+			Order savedOrder = orderRepository.save(order);
+
+			/*
+			 * OrderCreatedEvent event = new OrderCreatedEvent(savedOrder.getId(),
+			 * savedOrder.getProductId(), savedOrder.getQuantity());
+			 */
+
+			OrderCreatedEvent event = new OrderCreatedEvent(savedOrder.getId(), savedOrder.getProductId(),
+					savedOrder.getQuantity());
+			ObjectMapper mapper = new ObjectMapper();
+			OutboxService outboxService = new OutboxService(outboxEventRepository, mapper);
+			outboxService .saveOrderCreatedEvent(event);
+			//orderEventProducer.publishOrderCreated(event);
+
+			return savedOrder;
+
 		} catch (FeignException.NotFound ex) {
 			throw new ProductNotFoundException("Product not found: " + order.getProductId());
 		} catch (FeignException.Conflict ex) {
 			throw new InsufficientStockException("Insufficient stock for product: " + order.getProductId());
+		} catch (Exception e) {
+			log.error("Order processing failed after stock reservation. " + "Restocking productId={}, quantity={}",
+					order.getProductId(), order.getQuantity(), e);
+			//productClient.releaseStock(order.getProductId(), order.getQuantity());
+			throw e;
 		}
 	}
 

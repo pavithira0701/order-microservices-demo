@@ -24,4 +24,9 @@ public interface ProductClient {
 
 	@PutMapping("/api/products/{id}/stock")
 	ProductResponse reserveStock(@PathVariable Long id, @RequestParam int quantity);
+
+	/*
+	 * @PutMapping("/api/products/{id}/stock") ProductResponse releaseStock(Long
+	 * productId, int quantity);
+	 */
 }
