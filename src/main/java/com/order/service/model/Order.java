@@ -21,6 +21,10 @@ public class Order {
     @Positive(message = "Quantity must be greater than zero")
 	private Integer quantity;
 
+	public Order() {
+		super();
+	}
+
 	public Order(Long id, int quantity, Long productId) {
 		super();
 		this.id = id;

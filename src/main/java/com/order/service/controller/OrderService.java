@@ -2,6 +2,10 @@ package com.order.service.controller;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +35,24 @@ public class OrderService {
 		this.orderRepository = orderRepository;
 		this.productClient = productClient;
 		this.outboxEventRepository = outboxEventRepository;
+	}
+
+	public List<Order> getAllOrders() {
+		return orderRepository.findAll();
+	}
+
+	public Optional<Order> getOrderById(Long id) {
+		return orderRepository.findById(id);
+	}
+
+	public boolean deleteOrder(Long id) {
+
+		if (orderRepository.existsById(id)) {
+			orderRepository.deleteById(id);
+			return true;
+		}
+
+		return false;
 	}
 
 	@Transactional
@@ -65,8 +87,8 @@ public class OrderService {
 					savedOrder.getQuantity());
 			ObjectMapper mapper = new ObjectMapper();
 			OutboxService outboxService = new OutboxService(outboxEventRepository, mapper);
-			outboxService .saveOrderCreatedEvent(event);
-			//orderEventProducer.publishOrderCreated(event);
+			outboxService.saveOrderCreatedEvent(event);
+			// orderEventProducer.publishOrderCreated(event);
 
 			return savedOrder;
 
@@ -77,7 +99,7 @@ public class OrderService {
 		} catch (Exception e) {
 			log.error("Order processing failed after stock reservation. " + "Restocking productId={}, quantity={}",
 					order.getProductId(), order.getQuantity(), e);
-			//productClient.releaseStock(order.getProductId(), order.getQuantity());
+			// productClient.releaseStock(order.getProductId(), order.getQuantity());
 			throw e;
 		}
 	}

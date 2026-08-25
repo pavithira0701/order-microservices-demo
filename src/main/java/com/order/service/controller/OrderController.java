@@ -22,45 +22,68 @@ import com.order.service.repository.OrderRepository;
 @RequestMapping("/api/orders")
 public class OrderController {
 
-	private OrderRepository orderRepository = null;
+    private final OrderService orderService;
 
-	private OrderService orderService = null;
+    public OrderController(OrderService orderService) {
+        this.orderService = orderService;
+    }
 
-	public OrderController(OrderService orderService) {
-		this.orderService = orderService;
-	}
+    // Create order
+    @PostMapping
+    public ResponseEntity<ApiResponse<Order>> createOrder(
+            @Valid @RequestBody Order order) {
 
-	// to create new order
-	@PostMapping
-	public ResponseEntity<ApiResponse<Order>> createOrder(@Valid @RequestBody Order order) {
-		Order createdOrder = orderService.createOrder(order);
-		ApiResponse<Order> response = new ApiResponse<>("Order placed Successfully", HttpStatus.CREATED.value(),
-				createdOrder);
-		return ResponseEntity.status(HttpStatus.CREATED).body(response);
-	}
+        Order createdOrder = orderService.createOrder(order);
 
-	// get all orders
-	@GetMapping
-	public ResponseEntity<List<Order>> getAllProducts() {
-		return ResponseEntity.ok(orderRepository.findAll());
-	}
+        ApiResponse<Order> response =
+                new ApiResponse<>(
+                        "Order placed Successfully",
+                        HttpStatus.CREATED.value(),
+                        createdOrder);
 
-	// get order by id
-	@GetMapping("/{id}")
-	public ResponseEntity<Order> getProductById(@PathVariable Long id) {
-		Optional<Order> product = orderRepository.findById(id);
-		return product.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-	}
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
 
-	// cancel order by id
-	@DeleteMapping("/{id}")
-	public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long id) {
-		if (orderRepository.existsById(id)) {
-			orderRepository.deleteById(id);
-			ApiResponse<Void> response = new ApiResponse<>("Order cancelled successfully with ID: " + id,
-					HttpStatus.OK.value());
-			return ResponseEntity.ok(response);
-		}
-		return ResponseEntity.notFound().build();
-	}
+    // Get all orders
+    @GetMapping
+    public ResponseEntity<List<Order>> getAllOrders() {
+
+        return ResponseEntity.ok(
+                orderService.getAllOrders()
+        );
+    }
+
+    // Get order by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<Order> getOrderById(
+            @PathVariable Long id) {
+
+        return orderService.getOrderById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(
+                        () -> ResponseEntity.notFound().build()
+                );
+    }
+
+    // Delete / cancel order
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteOrder(
+            @PathVariable Long id) {
+
+        boolean deleted = orderService.deleteOrder(id);
+
+        if (deleted) {
+
+            ApiResponse<Void> response =
+                    new ApiResponse<>(
+                            "Order cancelled successfully with ID: " + id,
+                            HttpStatus.OK.value());
+
+            return ResponseEntity.ok(response);
+        }
+
+        return ResponseEntity.notFound().build();
+    }
 }

@@ -2,6 +2,10 @@ package com.order.service.model;
 
 public class ProductResponse {
 
+	public ProductResponse() {
+		super();
+	}
+
 	private Long id;
 	private String category;
 	private String brand;
